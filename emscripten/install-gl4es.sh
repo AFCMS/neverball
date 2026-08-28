@@ -7,6 +7,6 @@ cd "${GL4ES_DIR}" && {
     git checkout $GL4ES_COMMIT &&
     mkdir build &&
     cd build &&
-    emcmake cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DNOX11=ON -DNOEGL=ON -DSTATICLIB=ON &&
+    emcmake cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DNOX11=ON -DNOEGL=ON -DSTATICLIB=ON &&
     make
 }

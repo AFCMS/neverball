@@ -12,9 +12,9 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
-#include <SDL_events.h>
-#include <SDL_joystick.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_joystick.h>
 
 #include "joy.h"
 #include "state.h"
@@ -29,7 +29,7 @@ static struct
     SDL_JoystickID id;
 } joysticks[JOY_MAX];
 
-static SDL_JoystickID joy_curr = -1;
+static SDL_JoystickID joy_curr = 0;
 
 /*
  * Initialize joystick state.
@@ -38,7 +38,7 @@ void joy_init(void)
 {
     size_t i = 0;
 
-    if (SDL_InitSubSystem(SDL_INIT_JOYSTICK) < 0)
+    if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK))
     {
         log_printf("Failure to initialize joystick (%s)\n", SDL_GetError());
         return;
@@ -47,10 +47,10 @@ void joy_init(void)
     for (i = 0; i < ARRAYSIZE(joysticks); ++i)
     {
         joysticks[i].joy = NULL;
-        joysticks[i].id = -1;
+        joysticks[i].id = 0;
     }
 
-    SDL_JoystickEventState(SDL_ENABLE);
+    SDL_SetJoystickEventsEnabled(true);
 }
 
 /*
@@ -70,11 +70,11 @@ void joy_quit(void)
 /*
  * Handle joystick add event.
  */
-void joy_add(int device)
+void joy_add(SDL_JoystickID device)
 {
-    log_printf("Joystick added (device %d)\n", device);
+    log_printf("Joystick added (device %u)\n", device);
 
-    SDL_Joystick *joy = SDL_JoystickOpen(device);
+    SDL_Joystick *joy = SDL_OpenJoystick(device);
 
     if (joy)
     {
@@ -85,11 +85,11 @@ void joy_add(int device)
             if (joysticks[i].joy == NULL)
             {
                 joysticks[i].joy = joy;
-                joysticks[i].id = SDL_JoystickInstanceID(joy);
-                log_printf("Joystick opened (instance %d)\n", joysticks[i].id);
+                joysticks[i].id = SDL_GetJoystickID(joy);
+                log_printf("Joystick opened (instance %u)\n", joysticks[i].id);
 
                 joy_curr = joysticks[i].id;
-                log_printf("Joystick %d made current via device addition\n", joy_curr);
+                log_printf("Joystick %u made current via device addition\n", joy_curr);
 
                 break;
             }
@@ -97,8 +97,9 @@ void joy_add(int device)
 
         if (i == ARRAYSIZE(joysticks))
         {
-            SDL_JoystickClose(joy);
-            log_printf("Joystick %d not opened, %ud open joysticks reached\n", device, ARRAYSIZE(joysticks));
+            SDL_CloseJoystick(joy);
+            log_printf("Joystick %u not opened, %zu open joysticks reached\n",
+                       device, ARRAYSIZE(joysticks));
         }
     }
 }
@@ -106,28 +107,31 @@ void joy_add(int device)
 /*
  * Handle joystick remove event.
  */
-void joy_remove(int instance)
+void joy_remove(SDL_JoystickID instance)
 {
     size_t i;
 
-    log_printf("Joystick removed (instance %d)\n", instance);
+    log_printf("Joystick removed (instance %u)\n", instance);
 
     for (i = 0; i < ARRAYSIZE(joysticks); ++i)
     {
         if (joysticks[i].id == instance)
         {
-            SDL_JoystickClose(joysticks[i].joy);
+            SDL_CloseJoystick(joysticks[i].joy);
             joysticks[i].joy = NULL;
-            joysticks[i].id = -1;
-            log_printf("Joystick closed (instance %d)\n", instance);
+            joysticks[i].id = 0;
+            log_printf("Joystick closed (instance %u)\n", instance);
         }
     }
+
+    if (joy_curr == instance)
+        joy_curr = 0;
 }
 
 /*
  * Handle joystick button event.
  */
-int joy_button(int instance, int b, int d)
+int joy_button(SDL_JoystickID instance, int b, int d)
 {
     if (joy_curr == instance)
     {
@@ -138,7 +142,7 @@ int joy_button(int instance, int b, int d)
     {
         /* Do not process button event, but make joystick current. */
         joy_curr = instance;
-        log_printf("Joystick %d made current via button press\n", joy_curr);
+        log_printf("Joystick %u made current via button press\n", joy_curr);
         return 1;
     }
 }
@@ -146,7 +150,7 @@ int joy_button(int instance, int b, int d)
 /*
  * Handle joystick axis event.
  */
-void joy_axis(int instance, int a, float v)
+void joy_axis(SDL_JoystickID instance, int a, float v)
 {
     if (joy_curr == instance)
     {

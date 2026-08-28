@@ -9,13 +9,13 @@ BUILD ?= devel
 VERSION := $(shell sh scripts/version.sh)
 
 ifeq ($(BUILD), devel)
-CFLAGS := -O1 -fsanitize=undefined -fsanitize=address -std=gnu99 -Wall -Ishare
+CFLAGS := -O1 -fsanitize=undefined -fsanitize=address -std=gnu99 -Wall -Ishare -DSDL_DISABLE_OLD_NAMES
 else
-CFLAGS := -O3 -std=gnu99 -Wall -Ishare -DNDEBUG
+CFLAGS := -O3 -std=gnu99 -Wall -Ishare -DNDEBUG -DSDL_DISABLE_OLD_NAMES
 endif
 
 EM_CFLAGS := \
-	-s USE_SDL=2 \
+	-s USE_SDL=3 \
 	-s USE_LIBPNG=1 \
 	-s USE_LIBJPEG=1
 

@@ -1,7 +1,7 @@
 #ifndef HUD_H
 #define HUD_H
 
-#include "SDL_events.h"
+#include <SDL3/SDL_events.h>
 
 /*---------------------------------------------------------------------------*/
 

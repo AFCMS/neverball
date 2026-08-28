@@ -13,6 +13,7 @@
  */
 
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
@@ -837,7 +838,7 @@ static struct size gui_measure_ttf(const char *text, TTF_Font *font)
     struct size size = { 0, 0 };
 
     if (text && font)
-        TTF_SizeUTF8(font, text, &size.w, &size.h);
+        TTF_GetStringSize(font, text, 0, &size.w, &size.h);
 
     return size;
 }

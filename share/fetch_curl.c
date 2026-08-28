@@ -21,9 +21,9 @@
 
 #include <curl/curl.h>
 
-#include <SDL_mutex.h>
-#include <SDL_thread.h>
-#include <SDL_events.h>
+#include <SDL3/SDL_mutex.h>
+#include <SDL3/SDL_thread.h>
+#include <SDL3/SDL_events.h>
 
 /*
  * The thing that lets us do async transfers in a single thread.
@@ -193,7 +193,7 @@ static void free_fetch_event(struct fetch_event *fe)
 /*
  * Custom SDL event code for fetch events.
  */
-unsigned long FETCH_EVENT = (unsigned long) -1;
+Uint32 FETCH_EVENT = 0;
 
 /*
  * Prepare for event dispatch.
@@ -203,7 +203,10 @@ unsigned long FETCH_EVENT = (unsigned long) -1;
 static void fetch_dispatch_init(void)
 {
     /* Get a custom event code for fetch events. */
-    FETCH_EVENT = (unsigned long) SDL_RegisterEvents(1);
+    FETCH_EVENT = SDL_RegisterEvents(1);
+
+    if (FETCH_EVENT == 0)
+        log_printf("Failure to register fetch event (%s)\n", SDL_GetError());
 }
 
 /*
@@ -215,12 +218,22 @@ static void fetch_dispatch_event(struct fetch_event *fe)
 
     memset(&e, 0, sizeof (e));
 
+    if (FETCH_EVENT == 0)
+    {
+        free_fetch_event(fe);
+        return;
+    }
+
     e.type = FETCH_EVENT;
     e.user.data1 = fe;
 
     /* This is thread safe. */
 
-    SDL_PushEvent(&e);
+    if (!SDL_PushEvent(&e))
+    {
+        log_printf("Failure to dispatch fetch event (%s)\n", SDL_GetError());
+        free_fetch_event(fe);
+    }
 }
 
 /*
@@ -500,11 +513,11 @@ static void fetch_step(void)
  *   while the main thread wakes it and waits for fetch_curl_mutex.
  */
 
-static SDL_mutex *fetch_curl_mutex;
-static SDL_mutex *fetch_sync_mutex;
+static SDL_Mutex *fetch_curl_mutex;
+static SDL_Mutex *fetch_sync_mutex;
 static SDL_Thread *fetch_thread;
 
-static SDL_atomic_t fetch_thread_running;
+static SDL_AtomicInt fetch_thread_running;
 
 /*
  * Fetch thread entry point.
@@ -515,7 +528,7 @@ static int fetch_thread_main(void *data)
 
     log_printf("Starting fetch thread\n");
 
-    while (SDL_AtomicGet(&fetch_thread_running))
+    while (SDL_GetAtomicInt(&fetch_thread_running))
     {
         CURLMcode code;
 
@@ -537,7 +550,7 @@ static int fetch_thread_main(void *data)
         else
         {
             log_printf("libcurl poll failure: %s\n", curl_multi_strerror(code));
-            SDL_AtomicSet(&fetch_thread_running, 0);
+            SDL_SetAtomicInt(&fetch_thread_running, 0);
         }
 
         SDL_UnlockMutex(fetch_curl_mutex);
@@ -575,14 +588,14 @@ static int fetch_thread_init(void)
         return 0;
     }
 
-    SDL_AtomicSet(&fetch_thread_running, 1);
+    SDL_SetAtomicInt(&fetch_thread_running, 1);
     fetch_thread = SDL_CreateThread(fetch_thread_main, "fetch", NULL);
 
     if (!fetch_thread)
     {
         log_printf("Failure to create fetch thread\n");
 
-        SDL_AtomicSet(&fetch_thread_running, 0);
+        SDL_SetAtomicInt(&fetch_thread_running, 0);
 
         SDL_DestroyMutex(fetch_curl_mutex);
         fetch_curl_mutex = NULL;
@@ -601,7 +614,7 @@ static int fetch_thread_init(void)
  */
 static void fetch_thread_quit(void)
 {
-    SDL_AtomicSet(&fetch_thread_running, 0);
+    SDL_SetAtomicInt(&fetch_thread_running, 0);
 
     if (multi_handle)
         curl_multi_wakeup(multi_handle);

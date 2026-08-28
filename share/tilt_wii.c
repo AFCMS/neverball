@@ -12,8 +12,8 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
-#include <SDL_thread.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_thread.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -99,7 +99,7 @@ struct tilt_state
 };
 
 static struct tilt_state state;
-static SDL_mutex        *mutex  = NULL;
+static SDL_Mutex        *mutex  = NULL;
 static SDL_Thread       *thread = NULL;
 
 #define FILTER 8
@@ -168,7 +168,7 @@ void tilt_init(void)
     memset(&state, 0, sizeof (struct tilt_state));
 
     mutex  = SDL_CreateMutex();
-    thread = SDL_CreateThread(tilt_func, "", NULL);
+    thread = SDL_CreateThread(tilt_func, "tilt-wii", NULL);
 }
 
 void tilt_free(void)

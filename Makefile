@@ -79,11 +79,12 @@ ALL_CXXFLAGS := -fno-rtti -fno-exceptions $(CXXFLAGS)
 
 # Preprocessor...
 
-SDL_CPPFLAGS := $(shell sdl2-config --cflags)
+SDL_CPPFLAGS := $(shell pkg-config --cflags 'sdl3 >= 3.2.6' 'sdl3-ttf >= 3.2.2')
 PNG_CPPFLAGS := $(shell libpng-config --cflags)
 JPEG_CPPFLAGS := $(shell pkg-config --cflags libjpeg)
 
-ALL_CPPFLAGS := $(SDL_CPPFLAGS) $(JPEG_CPPFLAGS) $(PNG_CPPFLAGS) -Ishare
+ALL_CPPFLAGS := $(SDL_CPPFLAGS) $(JPEG_CPPFLAGS) $(PNG_CPPFLAGS) -Ishare \
+	-DSDL_DISABLE_OLD_NAMES
 
 ALL_CPPFLAGS += \
 	-DCONFIG_USER=\"$(USERDIR)\" \
@@ -108,7 +109,8 @@ ifeq ($(ENABLE_HMD),libovr)
 endif
 
 ifeq ($(ENABLE_RADIANT_CONSOLE),1)
-	ALL_CPPFLAGS += -DENABLE_RADIANT_CONSOLE=1
+	ALL_CPPFLAGS += $(shell pkg-config --cflags 'sdl3-net >= 3.2.0') \
+		-DENABLE_RADIANT_CONSOLE=1
 endif
 
 ifneq ($(BUILD),release)
@@ -161,7 +163,7 @@ ALL_CPPFLAGS += $(HMD_CPPFLAGS)
 #------------------------------------------------------------------------------
 # Libraries
 
-SDL_LIBS := $(shell sdl2-config --libs)
+SDL_LIBS := $(shell pkg-config --libs 'sdl3 >= 3.2.6')
 PNG_LIBS := $(shell libpng-config --ldflags)
 JPEG_LIBS := $(shell pkg-config --libs libjpeg)
 
@@ -236,11 +238,7 @@ ifeq ($(PLATFORM),darwin)
 endif
 
 OGG_LIBS := -lvorbisfile
-TTF_LIBS := -lSDL2_ttf
-
-ifeq ($(PLATFORM),haiku)
-	TTF_LIBS := -lSDL2_ttf -lfreetype
-endif
+TTF_LIBS := $(shell pkg-config --libs 'sdl3-ttf >= 3.2.2')
 
 ifeq ($(ENABLE_FETCH),curl)
 	CURL_LIBS := $(shell curl-config --libs)
@@ -252,7 +250,7 @@ ALL_LIBS := $(HMD_LIBS) $(TILT_LIBS) $(INTL_LIBS) $(TTF_LIBS) \
 MAPC_LIBS := $(BASE_LIBS)
 
 ifeq ($(ENABLE_RADIANT_CONSOLE),1)
-	MAPC_LIBS += -lSDL2_net
+	MAPC_LIBS += $(shell pkg-config --libs 'sdl3-net >= 3.2.0')
 endif
 
 #------------------------------------------------------------------------------
@@ -518,12 +516,6 @@ $(PUTT_TARG) : $(PUTT_OBJS)
 
 $(MAPC_TARG) : $(MAPC_OBJS)
 	$(CC) $(ALL_CFLAGS) -o $(MAPC_TARG) $(MAPC_OBJS) $(LDFLAGS) $(MAPC_LIBS)
-
-# Work around some extremely helpful sdl-config scripts.
-
-ifeq ($(PLATFORM),mingw)
-$(MAPC_TARG) : ALL_CPPFLAGS := $(ALL_CPPFLAGS) -Umain
-endif
 
 sols : $(SOLS)
 

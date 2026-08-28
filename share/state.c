@@ -309,9 +309,9 @@ int st_touch(const SDL_TouchFingerEvent *event)
              video.device_w * event->dx,
              video.device_h * -event->dy);
 
-    if (event->type == SDL_FINGERDOWN)
+    if (event->type == SDL_EVENT_FINGER_DOWN)
         d = st_click(SDL_BUTTON_LEFT, 1);
-    else if (event->type == SDL_FINGERUP)
+    else if (event->type == SDL_EVENT_FINGER_UP)
         d = st_click(SDL_BUTTON_LEFT, 0);
 
     return d;

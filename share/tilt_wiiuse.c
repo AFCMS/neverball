@@ -12,8 +12,8 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
-#include <SDL_thread.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_thread.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -42,7 +42,7 @@ struct tilt_state
 };
 
 static struct tilt_state current_state, polled_state;
-static SDL_mutex        *mutex  = NULL;
+static SDL_Mutex        *mutex  = NULL;
 static SDL_Thread       *thread = NULL;
 
 static int tilt_thread(void *data)
@@ -174,7 +174,7 @@ void tilt_init(void)
         memcpy(wiiUseButtons, wiiUseButtonsHoldNormal, sizeof(wiiUseButtons));
 
     mutex  = SDL_CreateMutex();
-    thread = SDL_CreateThread(tilt_thread, "", NULL);
+    thread = SDL_CreateThread(tilt_thread, "tilt-wiiuse", NULL);
 }
 
 void tilt_free(void)

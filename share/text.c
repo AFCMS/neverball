@@ -12,11 +12,12 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <string.h>
 
 #include "common.h"
 #include "text.h"
+#include "video.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -103,13 +104,13 @@ void text_input_start(void (*cb)(int))
     text_input[0] = 0;
     CALLBACK(0);
 
-    SDL_StartTextInput();
+    video_set_text_input(1);
 }
 
 void text_input_stop(void)
 {
     on_text_input = NULL;
-    SDL_StopTextInput();
+    video_set_text_input(0);
 }
 
 int text_input_str(const char *input, int typing)

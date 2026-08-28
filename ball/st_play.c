@@ -350,14 +350,14 @@ static int fast_rotate;
 static int show_hud;
 static int loop_transition;
 
-static SDL_FingerID tilt_finger   = -1;
-static SDL_FingerID rotate_finger = -1;
+static SDL_FingerID tilt_finger   = 0;
+static SDL_FingerID rotate_finger = 0;
 static float rotate = 0.0f;
 
 static void play_loop_touch_reset(void)
 {
-    tilt_finger   = -1;
-    rotate_finger = -1;
+    tilt_finger   = 0;
+    rotate_finger = 0;
     rotate = 0.0f;
     rot_clr(DIR_R | DIR_L);
 }
@@ -568,7 +568,7 @@ static int play_loop_keybd(int c, int d)
     if (d && c == KEY_POSE)
         show_hud = !show_hud;
 
-    if (d && c == SDLK_c && config_cheat())
+    if (d && c == SDLK_C && config_cheat())
     {
         progress_stat(GAME_GOAL);
         return goto_state(&st_goal);
@@ -684,28 +684,33 @@ static int play_loop_touch(const SDL_TouchFingerEvent *event)
     }
     else if (mode == TOUCH_MODE_DYNAMIC)
     {
-        if (event->type == SDL_FINGERDOWN)
+        if (event->type == SDL_EVENT_FINGER_DOWN)
         {
-            SDL_Finger *finger = SDL_GetTouchFinger(event->touchId, 1); /* Second finger. */
+            SDL_Finger **fingers;
+            int count = 0;
 
-            if (finger && event->fingerId == finger->id)
+            fingers = SDL_GetTouchFingers(event->touchID, &count);
+
+            if (fingers && count > 1 && event->fingerID == fingers[1]->id)
             {
-                rotate_finger = finger->id;
+                rotate_finger = fingers[1]->id;
                 rotate = 0.0f;
             }
+
+            SDL_free(fingers);
         }
-        else if (event->type == SDL_FINGERUP)
+        else if (event->type == SDL_EVENT_FINGER_UP)
         {
-            if (event->fingerId == rotate_finger)
+            if (event->fingerID == rotate_finger)
             {
-                rotate_finger = -1;
+                rotate_finger = 0;
                 rot_clr(DIR_R | DIR_L);
                 rotate = 0.0f;
             }
         }
-        else if (event->type == SDL_FINGERMOTION)
+        else if (event->type == SDL_EVENT_FINGER_MOTION)
         {
-            if (event->fingerId == rotate_finger)
+            if (event->fingerID == rotate_finger)
                 play_loop_touch_rotate(event, rmax);
             else
                 play_loop_touch_tilt(event);
@@ -715,51 +720,51 @@ static int play_loop_touch(const SDL_TouchFingerEvent *event)
     {
         int is_tilt_side = (mode == TOUCH_MODE_LR) ? (event->x < 0.5f) : (event->x >= 0.5f);
 
-        if (event->type == SDL_FINGERDOWN)
+        if (event->type == SDL_EVENT_FINGER_DOWN)
         {
             if (is_tilt_side)
             {
-                tilt_finger = event->fingerId;
+                tilt_finger = event->fingerID;
             }
             else
             {
-                rotate_finger = event->fingerId;
+                rotate_finger = event->fingerID;
                 rotate = 0.0f;
             }
         }
-        else if (event->type == SDL_FINGERUP)
+        else if (event->type == SDL_EVENT_FINGER_UP)
         {
-            if (event->fingerId == rotate_finger)
+            if (event->fingerID == rotate_finger)
             {
-                rotate_finger = -1;
+                rotate_finger = 0;
                 rot_clr(DIR_R | DIR_L);
                 rotate = 0.0f;
             }
-            else if (event->fingerId == tilt_finger)
+            else if (event->fingerID == tilt_finger)
             {
-                tilt_finger = -1;
+                tilt_finger = 0;
             }
         }
-        else if (event->type == SDL_FINGERMOTION)
+        else if (event->type == SDL_EVENT_FINGER_MOTION)
         {
-            if (event->fingerId == rotate_finger)
+            if (event->fingerID == rotate_finger)
             {
                 play_loop_touch_rotate(event, rmax);
             }
-            else if (event->fingerId == tilt_finger)
+            else if (event->fingerID == tilt_finger)
             {
                 play_loop_touch_tilt(event);
             }
             else
             {
-                if (is_tilt_side && tilt_finger == -1)
+                if (is_tilt_side && tilt_finger == 0)
                 {
-                    tilt_finger = event->fingerId;
+                    tilt_finger = event->fingerID;
                     play_loop_touch_tilt(event);
                 }
-                else if (!is_tilt_side && rotate_finger == -1)
+                else if (!is_tilt_side && rotate_finger == 0)
                 {
-                    rotate_finger = event->fingerId;
+                    rotate_finger = event->fingerID;
                     rotate = 0.0f;
                     play_loop_touch_rotate(event, rmax);
                 }

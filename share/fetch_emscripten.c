@@ -140,7 +140,7 @@ void fetch_init(void)
     /* Just compile with -s FETCH=1 */
 }
 
-unsigned long FETCH_EVENT = (unsigned long) -1;
+Uint32 FETCH_EVENT = 0;
 
 void fetch_handle_event(void *data)
 {

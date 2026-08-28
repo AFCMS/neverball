@@ -14,6 +14,8 @@
 
 #include "fetch.h"
 
+Uint32 FETCH_EVENT = 0;
+
 void fetch_enable(int enable)
 {
 }

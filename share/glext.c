@@ -12,7 +12,7 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -104,7 +104,7 @@ int glext_assert(const char *ext)
     ptr = SDL_GL_GetProcAddress(str);                    \
     if (!ptr)                                            \
         log_printf("Missing OpenGL function %s\n", str); \
-    memcpy(&fun, &ptr, sizeof (void *));                 \
+    memcpy(&fun, &ptr, sizeof (fun));                    \
 } while(0)
 
 /*---------------------------------------------------------------------------*/
@@ -142,7 +142,7 @@ int glext_init(void)
     /* Desktop init. */
 
 #if !ENABLE_OPENGLES && !defined(__EMSCRIPTEN__)
-    void *ptr = 0;
+    SDL_FunctionPointer ptr = 0;
 
     if (glext_assert("ARB_multitexture"))
     {

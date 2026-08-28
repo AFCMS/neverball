@@ -12,10 +12,10 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
-#include <SDL_rwops.h>
+#include <SDL3/SDL.h>
 
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>

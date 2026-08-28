@@ -1002,7 +1002,7 @@ static void stroke_timer(int id, float dt)
 
     float k;
 
-    if (SDL_GetModState() & KMOD_SHIFT || stroke_rotate_alt)
+    if (SDL_GetModState() & SDL_KMOD_SHIFT || stroke_rotate_alt)
         k = 0.25;
     else
         k = 1.0;
