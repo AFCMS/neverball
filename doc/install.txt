@@ -4,8 +4,9 @@
 
 * REQUIREMENTS
 
-    SDL 2.0           http://libsdl.org/download-2.0.php
-    SDL2_ttf          http://libsdl.org/projects/SDL_ttf/
+    SDL 3.2.6         https://libsdl.org/
+    SDL3_ttf 3.2.2    https://github.com/libsdl-org/SDL_ttf
+    pkg-config        https://www.freedesktop.org/wiki/Software/pkg-config/
     libvorbis         http://xiph.org/vorbis/
     libpng            http://libpng.org/pub/png/libpng.html
     libjpeg           http://ijg.org/
@@ -77,7 +78,7 @@ make ENABLE_HMD=libovr
 make ENABLE_RADIANT_CONSOLE=1
     Map compiler output to Radiant console.
 
-    SDL2_net          http://www.libsdl.org/projects/SDL_net/
+    SDL3_net 3.2.0    https://github.com/libsdl-org/SDL_net
 
 
 * INSTALLATION
