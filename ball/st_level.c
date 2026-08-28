@@ -307,7 +307,7 @@ int goto_exit(void)
     {
         /* Quit the game. */
 
-        SDL_Event e = { SDL_QUIT };
+        SDL_Event e = { SDL_EVENT_QUIT };
         SDL_PushEvent(&e);
     }
 

@@ -14,7 +14,7 @@ jobs:
     name: Build WebAssembly Release
     runs-on: ubuntu-latest
     container:
-      image: emscripten/emsdk:3.1.65
+      image: emscripten/emsdk:6.0.8
       env:
         GL4ES_COMMIT: "c9895df34cd466c23bc60c2bd3db3d87e98fcbe7"
         GL4ES_DIR: "/opt/gl4es"
@@ -26,7 +26,7 @@ jobs:
       - name: Build base SOLs
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpng-dev libjpeg-dev pkg-config libsdl2-dev libcurl4-openssl-dev
+          sudo apt-get install -y libpng-dev libjpeg-dev pkg-config libcurl4-openssl-dev
           make -j$(nproc) sols
 
       - name: Build gl4es

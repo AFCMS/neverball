@@ -12,8 +12,8 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
-#include <SDL_ttf.h>
+#include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <string.h>
 #include <math.h>
 #include <png.h>
@@ -207,31 +207,37 @@ GLuint make_image_from_font(int *W, int *H,
         SDL_Color    col = { 0xFF, 0xFF, 0xFF, 0xFF };
         SDL_Surface *orig;
 
-        if ((orig = TTF_RenderUTF8_Blended(font, text, col)))
+        if ((orig = TTF_RenderText_Blended(font, text, 0, col)))
         {
+            const SDL_PixelFormatDetails *details;
             void *p;
             int  w2;
             int  h2;
-            int   b = orig->format->BitsPerPixel / 8;
+            int   b;
 
             SDL_Surface *src;
             SDL_PixelFormat fmt;
 
-            fmt = *orig->format;
+            details = SDL_GetPixelFormatDetails(orig->format);
+            if (!details)
+            {
+                SDL_DestroySurface(orig);
+                return 0;
+            }
 
-            fmt.Rmask = RMASK;
-            fmt.Gmask = GMASK;
-            fmt.Bmask = BMASK;
-            fmt.Amask = AMASK;
+            b = details->bytes_per_pixel;
+            fmt = SDL_GetPixelFormatForMasks(details->bits_per_pixel,
+                                             RMASK, GMASK, BMASK, AMASK);
 
-            if ((src = SDL_ConvertSurface(orig, &fmt, orig->flags)) == NULL)
+            if (fmt == SDL_PIXELFORMAT_UNKNOWN ||
+                (src = SDL_ConvertSurface(orig, fmt)) == NULL)
             {
                 /* Pretend everything's just fine. */
 
                 src = orig;
             }
             else
-                SDL_FreeSurface(orig);
+                SDL_DestroySurface(orig);
 
             /* Pad the text to power-of-two. */
 
@@ -254,7 +260,7 @@ GLuint make_image_from_font(int *W, int *H,
 
                 free(p);
             }
-            SDL_FreeSurface(src);
+            SDL_DestroySurface(src);
         }
     }
     else
@@ -283,7 +289,7 @@ void size_image_from_font(int *W, int *H,
     int h2 = 0;
 
     if (text)
-        TTF_SizeUTF8(font, text, &text_w, &text_h);
+        TTF_GetStringSize(font, text, 0, &text_w, &text_h);
 
     if (w) *w = text_w;
     if (h) *h = text_h;
@@ -314,8 +320,12 @@ SDL_Surface *load_surface(const char *filename)
 
         if ((q = image_flip(p, w, h, b, 0, 1)))
         {
-            srf = SDL_CreateRGBSurfaceFrom(q, w, h, b * 8, w * b,
-                                           RMASK, GMASK, BMASK, AMASK);
+            SDL_PixelFormat fmt = SDL_GetPixelFormatForMasks(b * 8,
+                                                             RMASK, GMASK,
+                                                             BMASK, AMASK);
+
+            if (fmt != SDL_PIXELFORMAT_UNKNOWN)
+                srf = SDL_CreateSurfaceFrom(w, h, fmt, q, w * b);
             if (!srf)
                 free(q);
         }

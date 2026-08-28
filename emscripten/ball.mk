@@ -3,6 +3,10 @@ CC = emcc
 JSDIR = js
 
 GL4ES_DIR ?= ../gl4es
+SDL_TTF_VERSION ?= 3.2.2
+SDL_TTF_BUILD_DIR ?= build/emscripten/SDL3_ttf
+SDL_TTF_SOURCE_DIR := $(SDL_TTF_BUILD_DIR)/source
+SDL_TTF_LIBRARY := $(SDL_TTF_BUILD_DIR)/cmake/SDL3_ttf/libSDL3_ttf.a
 
 # Emscripten fast linking: https://github.com/emscripten-core/emscripten/issues/17019
 BUILD ?= devel
@@ -11,14 +15,14 @@ BUILD ?= devel
 VERSION := $(shell sh scripts/version.sh)
 
 ifeq ($(BUILD), devel)
-CFLAGS := -O1 -g -fsanitize=undefined -fsanitize=address -std=gnu99 -Wall -Ishare -DNDEBUG -DENABLE_FETCH=1 -I$(GL4ES_DIR)/include
+CFLAGS := -O1 -g -fsanitize=undefined -fsanitize=address -std=gnu99 -Wall -Ishare -DNDEBUG -DENABLE_FETCH=1 -DSDL_DISABLE_OLD_NAMES -I$(GL4ES_DIR)/include -I$(SDL_TTF_SOURCE_DIR)/include
 else
-CFLAGS := -O3 -std=gnu99 -Wall -Ishare -DNDEBUG -DENABLE_FETCH=1 -I$(GL4ES_DIR)/include
+CFLAGS := -O3 -std=gnu99 -Wall -Ishare -DNDEBUG -DENABLE_FETCH=1 -DSDL_DISABLE_OLD_NAMES -I$(GL4ES_DIR)/include -I$(SDL_TTF_SOURCE_DIR)/include
 endif
 
 EM_CFLAGS := \
-	-s USE_SDL=2 \
-	-s USE_SDL_TTF=2 \
+	-s USE_SDL=3 \
+	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
 	-s USE_LIBJPEG=1
 
@@ -26,14 +30,14 @@ DATA_ZIP := base-neverball.zip
 
 EM_PRELOAD := --preload-file $(DATA_ZIP)@/data/base-neverball.zip
 
-LDFLAGS := $(GL4ES_DIR)/lib/libGL.a
+LDFLAGS := $(GL4ES_DIR)/lib/libGL.a $(SDL_TTF_LIBRARY)
 EM_LDFLAGS := \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s FULL_ES2=1 \
 	-s INVOKE_RUN=0 \
 	-s NO_EXIT_RUNTIME=1 \
-	-s EXPORTED_FUNCTIONS=_main,_push_user_event,_config_set \
-	-s EXPORTED_RUNTIME_METHODS=callMain,ccall,cwrap,FS,IDBFS,pauseMainLoop,resumeMainLoop \
+	-s EXPORTED_FUNCTIONS=_main,_push_user_event,_config_set,_web_pause_main_loop,_web_resume_main_loop \
+	-s EXPORTED_RUNTIME_METHODS=callMain,ccall,cwrap,FS,IDBFS \
 	-s HTML5_SUPPORT_DEFERRING_USER_SENSITIVE_REQUESTS=0 \
 	-s LLD_REPORT_UNDEFINED \
 	-s FETCH=1 \
@@ -128,13 +132,18 @@ BALL_SRCS := \
 
 BALL_OBJS := $(BALL_SRCS:.c=.emscripten.o)
 
+$(BALL_OBJS): $(SDL_TTF_LIBRARY)
+
+$(SDL_TTF_LIBRARY): emscripten/ball.mk emscripten/build-sdl3-ttf.sh emscripten/SDL3_ttf/CMakeLists.txt
+	emscripten/build-sdl3-ttf.sh $(SDL_TTF_BUILD_DIR) $(SDL_TTF_VERSION)
+
 %.emscripten.o: %.c
 	$(CC) -c -o $@ $(CFLAGS) $(EM_CFLAGS) $<
 
 .PHONY: neverball
 neverball: $(JSDIR)/neverball.js $(JSDIR)/service-worker.js
 
-$(JSDIR)/neverball.js: $(BALL_OBJS) $(DATA_ZIP)
+$(JSDIR)/neverball.js: $(BALL_OBJS) $(DATA_ZIP) $(SDL_TTF_LIBRARY)
 	$(CC) -o $@ $(BALL_OBJS) $(CFLAGS) $(EM_CFLAGS) $(LDFLAGS) $(EM_LDFLAGS)
 
 $(JSDIR)/service-worker.js: $(JSDIR)/service-worker.in.js neverball-version.txt neverball-build.txt

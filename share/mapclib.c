@@ -26,10 +26,9 @@
 
 #if ENABLE_RADIANT_CONSOLE
 /*
- * Mapc is not an SDL app, we just want the SDL_net symbols.
+ * Mapc uses SDL only through SDL_net.
  */
-#define WITHOUT_SDL 1
-#include <SDL_net.h>
+#include <SDL3_net/SDL_net.h>
 #endif
 
 #include "mapclib.h"
@@ -160,7 +159,8 @@ struct mapc_context
     STRBUF full_dst_path;
 
 #if ENABLE_RADIANT_CONSOLE
-    TCPsocket bcast_socket;
+    NET_StreamSocket *bcast_socket;
+    int bcast_initialized;
     unsigned char bcast_msg[MAX_BCAST_MSG];
     size_t bcast_msg_len;
 #endif
@@ -221,7 +221,7 @@ static void bcast_quit(struct mapc_context *ctx);
 
 static int bcast_error(struct mapc_context *ctx)
 {
-    fprintf(stderr, "%s\n", SDLNet_GetError());
+    fprintf(stderr, "%s\n", SDL_GetError());
     bcast_quit(ctx);
     return 0;
 }
@@ -278,9 +278,9 @@ static void bcast_send_str(struct mapc_context *ctx, const char *str)
     /* Send data. */
 
     if (ctx->bcast_socket &&
-        SDLNet_TCP_Send(ctx->bcast_socket,
-                        ctx->bcast_msg,
-                        ctx->bcast_msg_len) < ctx->bcast_msg_len)
+        !NET_WriteToStreamSocket(ctx->bcast_socket,
+                                 ctx->bcast_msg,
+                                 (int) ctx->bcast_msg_len))
         bcast_error(ctx);
 }
 
@@ -305,13 +305,30 @@ static void bcast_send_msg(struct mapc_context *ctx, int lvl, const char *str)
 
 static int bcast_init(struct mapc_context *ctx)
 {
-    IPaddress addr;
+    NET_Address *addr;
 
-    if (SDLNet_Init() == -1)
+    if (ctx->bcast_initialized)
+        return 1;
+
+    if (!NET_Init())
         return bcast_error(ctx);
-    if (SDLNet_ResolveHost(&addr, "127.0.0.1", 39000) == -1)
+
+    ctx->bcast_initialized = 1;
+
+    if (!(addr = NET_ResolveHostname("127.0.0.1")))
         return bcast_error(ctx);
-    if (!(ctx->bcast_socket = SDLNet_TCP_Open(&addr)))
+
+    if (NET_WaitUntilResolved(addr, -1) != NET_SUCCESS)
+    {
+        NET_UnrefAddress(addr);
+        return bcast_error(ctx);
+    }
+
+    ctx->bcast_socket = NET_CreateClient(addr, 39000, 0);
+    NET_UnrefAddress(addr);
+
+    if (!ctx->bcast_socket ||
+        NET_WaitUntilConnected(ctx->bcast_socket, -1) != NET_SUCCESS)
         return bcast_error(ctx);
 
     bcast_send_str(ctx, "<?xml version=\"1.0\"?>"
@@ -321,9 +338,20 @@ static int bcast_init(struct mapc_context *ctx)
 
 static void bcast_quit(struct mapc_context *ctx)
 {
-    SDLNet_TCP_Close(ctx->bcast_socket);
-    ctx->bcast_socket = NULL;
-    SDLNet_Quit();
+    if (ctx->bcast_socket)
+    {
+        if (NET_WaitUntilStreamSocketDrained(ctx->bcast_socket, -1) < 0)
+            fprintf(stderr, "%s\n", SDL_GetError());
+
+        NET_DestroyStreamSocket(ctx->bcast_socket);
+        ctx->bcast_socket = NULL;
+    }
+
+    if (ctx->bcast_initialized)
+    {
+        NET_Quit();
+        ctx->bcast_initialized = 0;
+    }
 }
 
 #define MESSAGE(ctx, str) do {                       \
@@ -382,6 +410,7 @@ int mapc_init(struct mapc_context **ctx_ptr)
 
 #if ENABLE_RADIANT_CONSOLE
     ctx->bcast_socket = NULL;
+    ctx->bcast_initialized = 0;
     ctx->bcast_msg_len = 0;
 #endif
 

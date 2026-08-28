@@ -12,7 +12,7 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 
 #include "config.h"
@@ -352,10 +352,19 @@ static int video_gui(void)
         char resolution[sizeof ("12345678 x 12345678")];
         const char *display;
         int dpy = config_get_d(CONFIG_DISPLAY);
+        int display_count = 0;
+        SDL_DisplayID *displays = SDL_GetDisplays(&display_count);
 
         sprintf(resolution, "%d x %d", video.window_w, video.window_h);
 
-        if (!(display = SDL_GetDisplayName(dpy)))
+        if (displays && dpy >= 0 && dpy < display_count)
+            display = SDL_GetDisplayName(displays[dpy]);
+        else
+            display = NULL;
+
+        SDL_free(displays);
+
+        if (!display)
             display = _("Unknown Display");
 
         conf_header(id, _("Graphics"), GUI_BACK);
@@ -462,7 +471,8 @@ static int display_gui(void)
 {
     int id, jd;
 
-    int i, n = SDL_GetNumVideoDisplays();
+    int i, n = 0;
+    SDL_DisplayID *displays = SDL_GetDisplays(&n);
 
     if ((id = gui_vstack(0)))
     {
@@ -470,7 +480,7 @@ static int display_gui(void)
 
         for (i = 0; i < n; i++)
         {
-            const char *name = SDL_GetDisplayName(i);
+            const char *name = SDL_GetDisplayName(displays[i]);
 
             jd = gui_state(id, name, GUI_SML, DISPLAY_SELECT, i);
             gui_set_hilite(jd, (i == config_get_d(CONFIG_DISPLAY)));
@@ -478,6 +488,8 @@ static int display_gui(void)
 
         gui_layout(id, 0, 0);
     }
+
+    SDL_free(displays);
 
     return id;
 }

@@ -1281,8 +1281,8 @@ General Public License for more details.
 
       pauseEmscriptenLoop: function () {
         if (!this._module) return;
-        if (typeof this._module.pauseMainLoop === 'function') {
-          this._module.pauseMainLoop();
+        if (typeof this._module._web_pause_main_loop === 'function') {
+          this._module._web_pause_main_loop();
         } else if (this._module.Browser && typeof this._module.Browser.mainLoop?.pause === 'function') {
           this._module.Browser.mainLoop.pause();
         }
@@ -1290,8 +1290,8 @@ General Public License for more details.
 
       resumeEmscriptenLoop: function () {
         if (!this._module) return;
-        if (typeof this._module.resumeMainLoop === 'function') {
-          this._module.resumeMainLoop();
+        if (typeof this._module._web_resume_main_loop === 'function') {
+          this._module._web_resume_main_loop();
         } else if (this._module.Browser && typeof this._module.Browser.mainLoop?.resume === 'function') {
           this._module.Browser.mainLoop.resume();
         }

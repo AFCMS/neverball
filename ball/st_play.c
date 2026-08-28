@@ -554,7 +554,7 @@ static int play_loop_keybd(int c, int d)
     if (d && c == KEY_POSE)
         show_hud = !show_hud;
 
-    if (d && c == SDLK_c && config_cheat())
+    if (d && c == SDLK_C && config_cheat())
     {
         progress_stat(GAME_GOAL);
         return goto_state(&st_goal);
@@ -592,7 +592,7 @@ static int play_loop_buttn(int b, int d)
 
 static int play_loop_touch(const SDL_TouchFingerEvent *event)
 {
-    static SDL_FingerID rotate_finger = -1;
+    static SDL_FingerID rotate_finger = 0;
 
     static float rotate = 0.0f; /* Filtered input. */
 
@@ -635,28 +635,33 @@ static int play_loop_touch(const SDL_TouchFingerEvent *event)
             gui_focus(0);
         }
     }
-    else if (event->type == SDL_FINGERDOWN)
+    else if (event->type == SDL_EVENT_FINGER_DOWN)
     {
-        SDL_Finger *finger = SDL_GetTouchFinger(event->touchId, 1); /* Second finger. */
+        SDL_Finger **fingers;
+        int count = 0;
 
-        if (finger && event->fingerId == finger->id)
+        fingers = SDL_GetTouchFingers(event->touchID, &count);
+
+        if (fingers && count > 1 && event->fingerID == fingers[1]->id)
         {
-            rotate_finger = finger->id;
+            rotate_finger = fingers[1]->id;
             rotate = 0.0f;
         }
+
+        SDL_free(fingers);
     }
-    else if (event->type == SDL_FINGERUP)
+    else if (event->type == SDL_EVENT_FINGER_UP)
     {
-        if (event->fingerId == rotate_finger)
+        if (event->fingerID == rotate_finger)
         {
-            rotate_finger = -1;
+            rotate_finger = 0;
             rot_clr(DIR_R | DIR_L);
             rotate = 0.0f;
         }
     }
-    else if (event->type == SDL_FINGERMOTION)
+    else if (event->type == SDL_EVENT_FINGER_MOTION)
     {
-        if (event->fingerId == rotate_finger)
+        if (event->fingerID == rotate_finger)
         {
             /* Discard accumulated input when moving in the opposite direction. */
 

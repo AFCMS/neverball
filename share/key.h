@@ -1,7 +1,7 @@
 #ifndef KEY_H
 #define KEY_H 1
 
-#include <SDL_keycode.h>
+#include <SDL3/SDL_keycode.h>
 
 /* Names for some hard-coded keys. */
 

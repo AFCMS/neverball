@@ -14,7 +14,8 @@
 
 /*---------------------------------------------------------------------------*/
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,12 +91,12 @@ static int loop(void)
 
     while (d && SDL_PollEvent(&e))
     {
-        if (e.type == SDL_QUIT)
+        if (e.type == SDL_EVENT_QUIT)
             return 0;
 
         switch (e.type)
         {
-        case SDL_MOUSEMOTION:
+        case SDL_EVENT_MOUSE_MOTION :
             /* Convert to OpenGL coordinates. */
 
             ax = +e.motion.x;
@@ -114,27 +115,27 @@ static int loop(void)
 
             break;
 
-        case SDL_MOUSEBUTTONDOWN:
+        case SDL_EVENT_MOUSE_BUTTON_DOWN :
             d = st_click(e.button.button, 1);
             break;
 
-        case SDL_MOUSEBUTTONUP:
+        case SDL_EVENT_MOUSE_BUTTON_UP :
             d = st_click(e.button.button, 0);
             break;
 
-        case SDL_KEYDOWN:
+        case SDL_EVENT_KEY_DOWN :
 
-            c = e.key.keysym.sym;
+            c = e.key.key;
 
-#ifdef __APPLE__
-            if (c == SDLK_q && e.key.keysym.mod & KMOD_GUI)
+#ifdef SDL_PLATFORM_APPLE
+            if (c == SDLK_Q && e.key.mod & SDL_KMOD_GUI)
             {
                 d = 0;
                 break;
             }
 #endif
 #ifdef _WIN32
-            if (c == SDLK_F4 && e.key.keysym.mod & KMOD_ALT)
+            if (c == SDLK_F4 && e.key.mod & SDL_KMOD_ALT)
             {
                 d = 0;
                 break;
@@ -176,13 +177,13 @@ static int loop(void)
                 else if (config_tst_d(CONFIG_KEY_RIGHT, c))
                     st_stick(config_get_d(CONFIG_JOYSTICK_AXIS_X0), +1.0f);
                 else
-                    d = st_keybd(e.key.keysym.sym, 1);
+                    d = st_keybd(e.key.key, 1);
             }
             break;
 
-        case SDL_KEYUP:
+        case SDL_EVENT_KEY_UP :
 
-            c = e.key.keysym.sym;
+            c = e.key.key;
 
             switch (c)
             {
@@ -207,47 +208,55 @@ static int loop(void)
                 else if (config_tst_d(CONFIG_KEY_RIGHT, c))
                     st_stick(config_get_d(CONFIG_JOYSTICK_AXIS_X0), 0.0f);
                 else
-                    d = st_keybd(e.key.keysym.sym, 0);
+                    d = st_keybd(e.key.key, 0);
             }
             break;
 
-        case SDL_WINDOWEVENT:
-            switch (e.window.event)
-            {
-            case SDL_WINDOWEVENT_FOCUS_LOST:
-                if (video_get_grab())
-                    goto_pause(&st_over);
-                break;
-
-            case SDL_WINDOWEVENT_MOVED:
-                if (config_get_d(CONFIG_DISPLAY) != video_display())
-                    config_set_d(CONFIG_DISPLAY, video_display());
-                break;
-
-            case SDL_WINDOWEVENT_SIZE_CHANGED:
-                video_resize(e.window.data1, e.window.data2);
-                gui_resize();
-                break;
-            }
+        case SDL_EVENT_WINDOW_FOCUS_LOST :
+            if (video_get_grab())
+                goto_pause(&st_over);
             break;
 
-        case SDL_JOYAXISMOTION:
+        case SDL_EVENT_WINDOW_MOVED :
+            if (config_get_d(CONFIG_DISPLAY) != video_display())
+                config_set_d(CONFIG_DISPLAY, video_display());
+            break;
+
+        case SDL_EVENT_WINDOW_ENTER_FULLSCREEN :
+            config_set_d(CONFIG_FULLSCREEN, 1);
+            break;
+
+        case SDL_EVENT_WINDOW_LEAVE_FULLSCREEN :
+            config_set_d(CONFIG_FULLSCREEN, 0);
+            break;
+
+        case SDL_EVENT_WINDOW_RESIZED :
+            video_resize(e.window.data1, e.window.data2);
+            gui_resize();
+            break;
+
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED :
+            video_resize(video.window_w, video.window_h);
+            gui_resize();
+            break;
+
+        case SDL_EVENT_JOYSTICK_AXIS_MOTION :
             joy_axis(e.jaxis.which, e.jaxis.axis, JOY_VALUE(e.jaxis.value));
             break;
 
-        case SDL_JOYBUTTONDOWN:
+        case SDL_EVENT_JOYSTICK_BUTTON_DOWN :
             d = joy_button(e.jbutton.which, e.jbutton.button, 1);
             break;
 
-        case SDL_JOYBUTTONUP:
+        case SDL_EVENT_JOYSTICK_BUTTON_UP :
             d = joy_button(e.jbutton.which, e.jbutton.button, 0);
             break;
 
-        case SDL_JOYDEVICEADDED:
+        case SDL_EVENT_JOYSTICK_ADDED :
             joy_add(e.jdevice.which);
             break;
 
-        case SDL_JOYDEVICEREMOVED:
+        case SDL_EVENT_JOYSTICK_REMOVED :
             joy_remove(e.jdevice.which);
             break;
         }
@@ -316,7 +325,7 @@ int main(int argc, char *argv[])
     log_init("Neverputt" VERSION, "neverputt.log");
     fs_mkdir("Screenshots");
 
-    if (SDL_Init(SDL_INIT_VIDEO) == 0)
+    if (SDL_Init(SDL_INIT_VIDEO))
     {
         joy_init();
 
@@ -339,7 +348,7 @@ int main(int argc, char *argv[])
 
         if (video_init())
         {
-            int t1, t0 = SDL_GetTicks();
+            Uint64 t1, t0 = SDL_GetTicks();
 
             /* Material system. */
 
@@ -376,9 +385,9 @@ int main(int argc, char *argv[])
             while (loop())
                 if ((t1 = SDL_GetTicks()) > t0)
                 {
-                    st_timer((t1 - t0) / 1000.f);
+                    st_timer((float) (t1 - t0) / 1000.f);
                     hmd_step();
-                    st_paint(0.001f * t1);
+                    st_paint(0.001f * (float) t1);
                     video_swap();
 
                     t0 = t1;
@@ -405,4 +414,3 @@ int main(int argc, char *argv[])
 }
 
 /*---------------------------------------------------------------------------*/
-

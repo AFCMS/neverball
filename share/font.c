@@ -15,8 +15,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <SDL_ttf.h>
-#include <SDL_rwops.h>
+#include <SDL3_ttf/SDL_ttf.h>
+#include <SDL3/SDL_iostream.h>
 
 #include "font.h"
 #include "common.h"
@@ -36,14 +36,15 @@ int font_load(struct font *ft, const char *path, int sizes[FONT_SIZE_MAX])
 
             SAFECPY(ft->path, path);
 
-            if ((ft->rwops = SDL_RWFromConstMem(ft->data, ft->datalen)))
+            if ((ft->rwops = SDL_IOFromConstMem(ft->data, ft->datalen)))
             {
                 int opened = 0;
 
                 for (i = 0; i < ARRAYSIZE(ft->ttf); i++)
                 {
-                    SDL_RWseek(ft->rwops, 0, SEEK_SET);
-                    if ((ft->ttf[i] = TTF_OpenFontRW(ft->rwops, 0, sizes[i])))
+                    SDL_SeekIO(ft->rwops, 0, SEEK_SET);
+                    if ((ft->ttf[i] = TTF_OpenFontIO(ft->rwops, false,
+                                                    (float) sizes[i])))
                         opened++;
                 }
 
@@ -68,7 +69,7 @@ void font_free(struct font *ft)
                 TTF_CloseFont(ft->ttf[i]);
 
         if (ft->rwops)
-            SDL_RWclose(ft->rwops);
+            SDL_CloseIO(ft->rwops);
 
         if (ft->data)
             free(ft->data);
@@ -79,7 +80,7 @@ void font_free(struct font *ft)
 
 int font_init(void)
 {
-    return (TTF_Init() == 0);
+    return (TTF_Init());
 }
 
 void font_quit(void)

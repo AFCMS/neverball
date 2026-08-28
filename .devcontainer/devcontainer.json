@@ -25,7 +25,7 @@
                 "C_Cpp.default.cStandard": "c99",
                 "C_Cpp.default.systemIncludePath": [
                     "/emsdk/upstream/emscripten/cache/sysroot/include",
-                    "/emsdk/upstream/emscripten/cache/sysroot/include/SDL2",
+                    "/emsdk/upstream/emscripten/cache/sysroot/include/SDL3",
                     "/opt/gl4es/include"
                 ],
                 "C_Cpp.default.defines": [

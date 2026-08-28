@@ -15,6 +15,8 @@
 #ifndef FETCH_H
 #define FETCH_H 1
 
+#include <SDL3/SDL_stdinc.h>
+
 #define FETCH_MAX 5
 
 /*
@@ -44,7 +46,7 @@ struct fetch_callback
     void *data;
 };
 
-extern unsigned long FETCH_EVENT;
+extern Uint32 FETCH_EVENT;
 
 void fetch_init(void);
 void fetch_handle_event(void *);

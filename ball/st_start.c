@@ -273,7 +273,7 @@ static int start_keybd(int c, int d)
         if (c == KEY_EXIT)
             return start_action(GUI_BACK, 0);
 
-        if (c == SDLK_c && config_cheat())
+        if (c == SDLK_C && config_cheat())
         {
             set_cheat();
             return goto_state(&st_start);

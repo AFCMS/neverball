@@ -12,7 +12,7 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <math.h>
 #include <string.h>
 
@@ -338,7 +338,7 @@ int hud_touch(const SDL_TouchFingerEvent *event)
 
     touch_timer = 5.0f;
 
-    if (event->type == SDL_FINGERUP)
+    if (event->type == SDL_EVENT_FINGER_UP)
     {
         const int x = (int) ((float) video.device_w * event->x);
         const int y = (int) ((float) video.device_h * (1.0f - event->y));

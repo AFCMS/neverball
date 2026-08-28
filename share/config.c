@@ -12,7 +12,7 @@
  * General Public License for more details.
  */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -223,14 +223,14 @@ static struct
     { &CONFIG_KEY_CAMERA_1,      "key_camera_1",      SDLK_1 },
     { &CONFIG_KEY_CAMERA_2,      "key_camera_2",      SDLK_2 },
     { &CONFIG_KEY_CAMERA_3,      "key_camera_3",      SDLK_3 },
-    { &CONFIG_KEY_CAMERA_TOGGLE, "key_camera_toggle", SDLK_e },
-    { &CONFIG_KEY_CAMERA_R,      "key_camera_r",      SDLK_d },
-    { &CONFIG_KEY_CAMERA_L,      "key_camera_l",      SDLK_s },
+    { &CONFIG_KEY_CAMERA_TOGGLE, "key_camera_toggle", SDLK_E },
+    { &CONFIG_KEY_CAMERA_R,      "key_camera_r",      SDLK_D },
+    { &CONFIG_KEY_CAMERA_L,      "key_camera_l",      SDLK_S },
     { &CONFIG_KEY_FORWARD,       "key_forward",       SDLK_UP },
     { &CONFIG_KEY_BACKWARD,      "key_backward",      SDLK_DOWN },
     { &CONFIG_KEY_LEFT,          "key_left",          SDLK_LEFT },
     { &CONFIG_KEY_RIGHT,         "key_right",         SDLK_RIGHT },
-    { &CONFIG_KEY_RESTART,       "key_restart",       SDLK_r },
+    { &CONFIG_KEY_RESTART,       "key_restart",       SDLK_R },
     { &CONFIG_KEY_SCORE_NEXT,    "key_score_next",    SDLK_TAB },
     { &CONFIG_KEY_ROTATE_FAST,   "key_rotate_fast",   SDLK_LSHIFT },
 

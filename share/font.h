@@ -1,8 +1,8 @@
 #ifndef FONT_H
 #define FONT_H
 
-#include <SDL_ttf.h>
-#include <SDL_rwops.h>
+#include <SDL3_ttf/SDL_ttf.h>
+#include <SDL3/SDL_iostream.h>
 
 #include "base_config.h"
 
@@ -23,10 +23,10 @@ struct font
 {
     char path[PATHMAX];
 
-    TTF_Font  *ttf[FONT_SIZE_MAX];
-    SDL_RWops *rwops;
-    void      *data;
-    int        datalen;
+    TTF_Font     *ttf[FONT_SIZE_MAX];
+    SDL_IOStream *rwops;
+    void         *data;
+    int           datalen;
 };
 
 int  font_load(struct font *, const char *path, int sizes[FONT_SIZE_MAX]);
